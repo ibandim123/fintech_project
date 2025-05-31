@@ -47,6 +47,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BookText, FilePlus } from "lucide-react";
@@ -55,6 +62,16 @@ import { useState, useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Description } from "@radix-ui/react-dialog";
+import { Toggle } from "@/components/ui/toggle";
+import FilterBar from "@/components/custom/search";
+import TableWithPagination from "@/components/custom/table";
+import {
+  handleGetData,
+  handleDelete,
+  handleEdit,
+  handleCreate,
+} from "./controllers/home/HomeController";
 
 type Client = {
   id: number;
@@ -68,6 +85,7 @@ export function HomeClient() {
     "list"
   );
   const [dataRegister, setDataRegister] = useState<Client[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   //Revisar código aqui
   const formSchema = z.object({
@@ -85,66 +103,40 @@ export function HomeClient() {
     },
   });
 
-  // const { register, setValue, watch } = useForm({
-  //   defaultValues: {
-  //     status: true,
-  //   },
-  // });
+  const filteredData = dataRegister.filter(
+    (item: any) =>
+      item?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item?.status?.toString()?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
-    async function getData() {
-      try {
-        const data = await fetch("http://localhost:3001/clients");
-        const response = await data.json();
-        console.log(response);
-
-        // setValue("status", response.status);
-        setDataRegister(response);
-      } catch (error) {
-        console.error("Erro ao buscar dados: ", error);
-      }
+    async function fetchData() {
+      const data = await handleGetData();
+      setDataRegister(data);
     }
-
-    getData();
+    fetchData();
   }, []);
 
-  async function handleDelete(id: number) {
-    fetch(`http://localhost:3001/clients/${id}`, {
-      method: "DELETE",
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Erro ao deletar");
-        return fetch("http://localhost:3001/clients").then((r) => r.json());
-      })
-      .then(setDataRegister)
-      .catch((err) => console.error("Erro:", err));
-  }
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    try {
-      const response = await fetch("http://localhost:3001/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao enviar dados");
-      }
-      const data = await response.json();
-      console.log(data);
-      console.log("Dados enviados com sucesso!");
-    } catch (error) {
-      console.error("Erro ao enviar dados: ", error);
-    }
+  async function onDelete(id: number | null) {
+    await handleDelete(id);
+    const data = await handleGetData();
+    setDataRegister(data);
   }
 
   async function onEdit(values: any) {
-    console.log(values);
+    await handleEdit(values);
+    const data = await handleGetData();
+    setDataRegister(data);
   }
+
+  async function createNewItem(values: z.infer<typeof formSchema>) {
+    await handleCreate(values);
+    const data = await handleGetData();
+    setDataRegister(data);
+    form.reset();
+  }
+
   // Terminio da revisão de código
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -160,32 +152,64 @@ export function HomeClient() {
             </CardHeader>
 
             <CardContent className="flex mt-4 h-[24rem] ">
-              <aside className=" bg-black backdrop-blur-md shadow-md rounded-3xl p-8 flex flex-col gap-4 border border-black/30 h-full justify-between">
-                <SidebarHeader className="text-white">Header</SidebarHeader>
-
-                <SidebarContent>
-                  <SidebarGroup>
-                    <Button
-                      className="size-8 cursor-pointer"
-                      size="icon"
-                      onClick={() => setActiveSection("list")}
+              <aside className=" bg-black backdrop-blur-md shadow-md rounded-3xl p-2 flex flex-col gap-4 border border-black/30 h-full justify-center">
+                <div className="flex flex-col items-center gap-6 h-full justify-between py-4">
+                  <SidebarHeader className="flex items-center justify-center text-white">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 256 256"
+                      className="size-5"
                     >
-                      <BookText />
-                    </Button>
-                  </SidebarGroup>
+                      <rect width="256" height="256" fill="none"></rect>
+                      <line
+                        x1="208"
+                        y1="128"
+                        x2="128"
+                        y2="208"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="32"
+                      ></line>
+                      <line
+                        x1="192"
+                        y1="40"
+                        x2="40"
+                        y2="192"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="32"
+                      ></line>
+                    </svg>
+                  </SidebarHeader>
 
-                  <SidebarGroup>
-                    <Button
-                      className="size-8 cursor-pointer"
-                      size="icon"
-                      onClick={() => setActiveSection("form")}
-                    >
-                      <FilePlus />
-                    </Button>
-                  </SidebarGroup>
-                </SidebarContent>
+                  <SidebarContent className="flex flex-col gap-4">
+                    <SidebarGroup className="flex justify-center">
+                      <Toggle
+                        className="bg-black text-white size-8 cursor-pointer"
+                        size="sm"
+                        onClick={() => setActiveSection("list")}
+                      >
+                        <BookText />
+                      </Toggle>
+                    </SidebarGroup>
 
-                <SidebarFooter className="text-white">Rodapé</SidebarFooter>
+                    <SidebarGroup>
+                      <Toggle
+                        className="bg-black text-white size-8 cursor-pointer"
+                        size="sm"
+                        onClick={() => setActiveSection("form")}
+                      >
+                        <FilePlus />
+                      </Toggle>
+                    </SidebarGroup>
+                  </SidebarContent>
+
+                  <SidebarFooter className="text-white"></SidebarFooter>
+                </div>
               </aside>
 
               <div className="flex-1 pl-4">
@@ -198,166 +222,18 @@ export function HomeClient() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
                     <div>
-                      <h2 className="text-lg font-semibold mb-2">
-                        📋 Lista de registros
-                      </h2>
-                      <Table>
-                        <TableCaption>
-                          Lista de clientes cadastrados
-                        </TableCaption>
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold mb-2">
+                          Lista de registros
+                        </h2>
+                        <FilterBar onSearch={setSearchTerm} />
+                      </div>
 
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[100px]">Nome</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ação</TableHead>
-                          </TableRow>
-                        </TableHeader>
-
-                        <TableBody>
-                          {dataRegister?.map((item: any) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="font-medium">
-                                {item.name}
-                              </TableCell>
-
-                              <TableCell>{item.email}</TableCell>
-
-                              <TableCell>
-                                {item.status ? "Ativo" : "Inativo"}
-                              </TableCell>
-
-                              <TableCell className="text-right">
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button className="text-sm text-blue-500 hover:underline">
-                                      Editar
-                                    </Button>
-                                  </DialogTrigger>
-
-                                  <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
-                                      <DialogTitle>Edit profile</DialogTitle>
-
-                                      <FormProvider {...form}>
-                                        <form
-                                          onSubmit={form.handleSubmit(onEdit)}
-                                          className="space-y-8"
-                                        >
-                                          <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>
-                                                  Nome do Cliente
-                                                </FormLabel>
-                                                <FormControl>
-                                                  <Input {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-
-                                          <FormField
-                                            control={form.control}
-                                            name="email"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Email</FormLabel>
-                                                <FormControl>
-                                                  <Input {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-
-                                          <FormField
-                                            control={form.control}
-                                            name="status"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Status</FormLabel>
-                                                <FormControl>
-                                                  <Select
-                                                    onValueChange={
-                                                      field.onChange
-                                                    }
-                                                  >
-                                                    <SelectTrigger className="w-[180px]">
-                                                      <SelectValue placeholder="Status" />
-                                                    </SelectTrigger>
-
-                                                    <SelectContent>
-                                                      <SelectItem value="true">
-                                                        Ativo
-                                                      </SelectItem>
-
-                                                      <SelectItem value="false">
-                                                        Inativo
-                                                      </SelectItem>
-                                                    </SelectContent>
-                                                  </Select>
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                          <div className="flex justify-end">
-                                            <Button
-                                              className="cursor-pointer"
-                                              type="submit"
-                                            >
-                                              Editar registro
-                                            </Button>
-                                          </div>
-                                        </form>
-                                      </FormProvider>
-                                    </DialogHeader>
-                                    <div className="grid gap-4">
-                                      <div className="grid gap-3"></div>
-                                      <div className="grid gap-3"></div>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button className="ml-2 text-sm text-red-500 hover:underline">
-                                      Deletar
-                                    </Button>
-                                  </DialogTrigger>
-
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>
-                                        Você tem certeza que deseja apagar esse
-                                        registro?
-                                      </DialogTitle>
-                                      <DialogDescription>
-                                        Essa ação não pode ser desfeita. Essa
-                                        ação vai deletar o registro
-                                        permanentemente de nosso banco de dados.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="flex justify-end">
-                                      <Button
-                                        className="ml-2 text-sm text-red-500 hover:underline"
-                                        onClick={() => handleDelete(item.id)}
-                                      >
-                                        Apagar
-                                      </Button>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <TableWithPagination
+                        data={filteredData}
+                        onDelete={onDelete}
+                        onEdit={onEdit}
+                      />
                     </div>
                   </motion.div>
                 )}
@@ -371,11 +247,11 @@ export function HomeClient() {
                   >
                     <div>
                       <h2 className="text-lg font-semibold mb-2">
-                        📄 Novo registro
+                        Novo registro
                       </h2>
                       <FormProvider {...form}>
                         <form
-                          onSubmit={form.handleSubmit(onSubmit)}
+                          onSubmit={form.handleSubmit(createNewItem)}
                           className="space-y-8"
                         >
                           <FormField
