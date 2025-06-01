@@ -15,45 +15,14 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BookText, FilePlus } from "lucide-react";
@@ -62,7 +31,6 @@ import { useState, useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Description } from "@radix-ui/react-dialog";
 import { Toggle } from "@/components/ui/toggle";
 import FilterBar from "@/components/custom/search";
 import TableWithPagination from "@/components/custom/table";
@@ -113,35 +81,50 @@ export function HomeClient() {
   useEffect(() => {
     async function fetchData() {
       const data = await handleGetData();
-      setDataRegister(data);
+
+      if (data.code === 200) {
+        setDataRegister(data.data);
+      } else {
+        toast(data.message);
+        setDataRegister([]);
+      }
     }
     fetchData();
   }, []);
 
   async function onDelete(id: number | null) {
-    await handleDelete(id);
+    const load = await handleDelete(id);
     const data = await handleGetData();
-    setDataRegister(data);
+
+    // console.log(load);
+
+    toast(load.message);
+    setDataRegister(data.data);
   }
 
   async function onEdit(values: any) {
-    await handleEdit(values);
+    const load = await handleEdit(values);
     const data = await handleGetData();
-    setDataRegister(data);
+
+    toast(load.message);
+    setDataRegister(data.data);
   }
 
   async function createNewItem(values: z.infer<typeof formSchema>) {
-    await handleCreate(values);
+    const load = await handleCreate(values);
     const data = await handleGetData();
-    setDataRegister(data);
+
+    toast(load.message);
+    setDataRegister(data.data);
     form.reset();
   }
 
   // Terminio da revisão de código
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
+    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <main className="flex flex-col row-start-2 items-center sm:items-start">
         <section className="flex justify-center py-10">
+          <Toaster />
           <Card
             className="w-[48rem] p-[30px] bg-white/10 backdrop-blur-md border border-white/20 shadow-xl"
             style={{ borderRadius: "16px" }}

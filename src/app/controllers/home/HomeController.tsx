@@ -9,7 +9,14 @@ export async function handleGetData() {
   try {
     const response = await GetItem();
 
-    return response;
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      return {
+        message: response?.response?.data.error,
+        cause: response?.response?.data.cause,
+      };
+    }
   } catch (Exception) {
     console.error("Erro ao buscar dados: ", Exception);
   }
@@ -19,25 +26,48 @@ export async function handleCreate(values: any) {
   try {
     const response = await CreateItem(values);
 
-    return response;
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      return {
+        message: response?.response?.data?.error,
+        causa: response?.response?.data?.cause,
+      };
+    }
   } catch (Exception) {
-    console.error("Error ao buscar dados", Exception);
+    console.error("Error ao tentar criar novo item", Exception);
   }
 }
 
 export async function handleDelete(id: number | null) {
   try {
     const response = await DeleteItem(id);
-    console.log(response);
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      return {
+        message: response?.response?.data?.error,
+        causa: response?.response?.data.cause,
+      };
+    }
   } catch (Exception) {
-    console.log("Modal de Excerção", Exception);
+    console.error("Não foi possível deletar item", Exception);
   }
 }
 
 export async function handleEdit(values: any) {
   try {
     const response = await EditItem(values.id, values);
-    console.log(response);
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      return {
+        message: response?.response?.data?.error,
+        cause: response?.response?.data?.cause,
+      };
+    }
   } catch (Exception) {
     console.error("Erro ao editar dados: ", Exception);
   }

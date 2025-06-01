@@ -6,7 +6,7 @@ export async function CreateItem(values: any) {
     .then((response) => response)
     .catch((error) => error);
 
-  return response.data;
+  return response;
 }
 
 export async function GetItem() {
@@ -15,16 +15,16 @@ export async function GetItem() {
     .then((response) => response)
     .catch((error) => error);
 
-  return response.data;
+  return response;
 }
 
 export async function DeleteItem(id: number | null) {
   const response = await axios
     .delete(`http://localhost:3001/clients/${id}`)
     .then((response) => response)
-    .catch((error) => error);
+    .catch((response) => response);
 
-  return response.data;
+  return response;
 }
 
 export async function EditItem(id: number, values: any) {
@@ -33,5 +33,5 @@ export async function EditItem(id: number, values: any) {
     .then((response) => response)
     .catch((error) => error);
 
-  return response.data;
+  return response;
 }

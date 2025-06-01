@@ -108,11 +108,11 @@ export default function TableWithPagination({
   const table = useReactTable({
     data,
     columns,
-    state: { pagination: { pageIndex, pageSize: 5 } },
+    state: { pagination: { pageIndex, pageSize: 4 } },
     onPaginationChange: (updater) => {
       const next =
         typeof updater === "function"
-          ? updater({ pageIndex, pageSize: 5 })
+          ? updater({ pageIndex, pageSize: 4 })
           : updater;
       setPageIndex(next.pageIndex);
     },
@@ -230,7 +230,7 @@ export default function TableWithPagination({
     onClose: () => void;
   }) {
     return (
-      <Dialog open>
+      <Dialog open onOpenChange={onClose}>
         <DialogContent>
           <DialogTitle>Deletar registro</DialogTitle>
           <Description>
