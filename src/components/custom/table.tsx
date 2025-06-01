@@ -5,7 +5,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -15,18 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -43,11 +34,8 @@ import { Input } from "@/components/ui/input";
 import { Description } from "@radix-ui/react-dialog";
 import { FormProvider, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import {
-  handleDelete,
-  handleEdit,
-} from "@/app/controllers/home/HomeController";
-import { Pencil, Trash } from "lucide-react";
+import { Eye, Pencil, Trash } from "lucide-react";
+import { SearchActiveId } from "@/app/models/home/activesModel";
 
 type Client = {
   id: number;
@@ -62,14 +50,36 @@ type TableWithPaginationProps = {
   onEdit: (values: any) => Promise<void>;
 };
 
+type Financial_Asset = {
+  message: string;
+  code: number;
+  data: {
+    clientId: number;
+    financial_asset: string;
+    id: number;
+    value: number;
+  };
+};
+
 export default function TableWithPagination({
   data,
   onDelete,
   onEdit,
 }: TableWithPaginationProps) {
   const [pageIndex, setPageIndex] = useState(0);
+  const [viewItem, setViewItem] = useState<Client | null>(null);
   const [editingItem, setEditingItem] = useState<Client | null>(null);
   const [deletingItem, setDeletingItem] = useState<number | null>(null);
+
+  const [asset, setData] = useState<any>();
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
+
+  // Rever essa parte do código - Chamada Assíncrona direto no Componente
+
+  // useEffect(() => {
+  //   getActiveAssets();
+  // }, []);
 
   const columns: ColumnDef<any>[] = [
     { accessorKey: "name", header: "Nome" },
@@ -85,6 +95,15 @@ export default function TableWithPagination({
       cell: ({ row }) => {
         return (
           <div className="flex gap-2">
+            <Button
+              className="cursor-pointer"
+              onClick={() => {
+                setViewItem(row.original);
+                getActiveAssets(row.original.id);
+              }}
+            >
+              <Eye />
+            </Button>
             <Button
               className="cursor-pointer"
               size="icon"
@@ -120,6 +139,15 @@ export default function TableWithPagination({
     getPaginationRowModel: getPaginationRowModel(),
     manualPagination: false,
   });
+
+  async function getActiveAssets(id: number) {
+    const response = await SearchActiveId(id)
+      .then((response) => response)
+      .catch((error) => error)
+      .finally();
+
+    setData(response.data);
+  }
 
   function EditDialog({
     item,
@@ -254,6 +282,37 @@ export default function TableWithPagination({
     );
   }
 
+  function ViewDialog({
+    item,
+    onClose,
+  }: {
+    item: Client | null;
+    onClose: () => void;
+  }) {
+    return (
+      <Dialog open onOpenChange={onClose}>
+        <DialogContent>
+          <DialogTitle>Ativos do Cliente</DialogTitle>
+          <Description></Description>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ativo</TableHead>
+                <TableHead>Valor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>{asset?.data?.financial_asset}</TableCell>
+                <TableCell>{asset?.data?.value}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   function handleEditClick(values: any) {
     onEdit(values);
   }
@@ -324,6 +383,9 @@ export default function TableWithPagination({
           item={deletingItem}
           onClose={() => setDeletingItem(null)}
         />
+      )}
+      {viewItem && (
+        <ViewDialog item={viewItem} onClose={() => setViewItem(null)} />
       )}
     </div>
   );

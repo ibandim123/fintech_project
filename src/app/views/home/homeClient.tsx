@@ -39,7 +39,7 @@ import {
   handleDelete,
   handleEdit,
   handleCreate,
-} from "./controllers/home/HomeController";
+} from "@/app/controllers/home/HomeController";
 
 type Client = {
   id: number;
@@ -89,14 +89,13 @@ export function HomeClient() {
         setDataRegister([]);
       }
     }
+
     fetchData();
   }, []);
 
   async function onDelete(id: number | null) {
     const load = await handleDelete(id);
     const data = await handleGetData();
-
-    // console.log(load);
 
     toast(load.message);
     setDataRegister(data.data);

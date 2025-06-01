@@ -1,5 +1,4 @@
-import { HomeClient } from "./homeClient";
-import Image from "next/image";
+import { HomeClient } from "./views/home/homeClient";
 
 export default function Home() {
   return (
