@@ -57,8 +57,12 @@ export function HomeClient() {
 
   //Revisar código aqui
   const formSchema = z.object({
-    name: z.string().min(1),
-    email: z.string().min(1),
+    name: z
+      .string()
+      .min(3, { message: "O nome deve ter no mínimo 3 caracteres" }),
+    email: z.string().min(3).endsWith("@outlook.com", {
+      message: "O email deve terminar com @outlook.com",
+    }),
     status: z.boolean(),
   });
 
