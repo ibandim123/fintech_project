@@ -1,21 +1,20 @@
-# Project FinTech Front-End
+# Project FinTech Front-End CRUD
 
-## Getting Started
+<div>
+  <img src="public\images\CRUD NEXT.png" height="335px" />
+  <img src="public\images\CRUD NEXT 1.png" height="335px" />
+</div>
 
-### Installing Dependencies
+CRUD in Next.js
 
-```bash
-npm install
-```
+### Technologies
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+<ul>
+  <li>React </li>
+  <li>Next.js</li>
+  <li>Typescript</li>
+  <li>lucide-react</li>
+  <li>tailwind</li>
+  <li>zod</li>
+  <li>axios</li>
+</ul>
